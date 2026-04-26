@@ -71,11 +71,16 @@ export function registerCommands(
     const isRunning = !!runningRunId && runningRunId === services.state.currentPlan?.runId;
     const isCompleted = !!services.state.currentPlan?.evaluation || !!services.state.currentPlan?.finishedAt;
 
+    const pendingPlans = services.planRepo.getPlans(30);
+    const finishedRuns = services.planRepo.getRuns(30);
+
     services.dashboard.open(context, {
       currentPlan: services.state.currentPlan,
       lastRun: services.state.lastRun,
       metrics,
       memory,
+      pendingPlans,
+      finishedRuns,
       logs,
       version: "0.6.0",
       logPath: services.logger.path,
@@ -126,6 +131,17 @@ export function registerCommands(
     services.logger.info("selectRun: invoked", { runId: run.runId });
     services.state.currentPlan = run;
     await refreshDashboard();
+  }));
+
+  disposables.push(vscode.commands.registerCommand("aiWorkflow.selectRunById", async (runId: string) => {
+    services.logger.info("selectRunById: invoked", { runId });
+    const allPlans = services.planRepo.getPlans(50);
+    const allRuns  = services.planRepo.getRuns(50);
+    const found = [...allPlans, ...allRuns].find((r) => r.runId === runId);
+    if (found) {
+      services.state.currentPlan = found;
+      await refreshDashboard();
+    }
   }));
 
   disposables.push(vscode.commands.registerCommand("aiWorkflow.runTask", async () => {

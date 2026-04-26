@@ -45,6 +45,8 @@ export function shellHtml(title: string, body: string, webview: vscode.Webview):
     .step-live-status { font-size: 0.9em; min-width: 1.2em; display: inline-block; }
     .ws-log { max-height: 180px; overflow-y: auto; font-size: 0.76em; font-family: monospace; padding: 6px; }
     .ws-entry { padding: 2px 0; border-bottom: 1px solid var(--vscode-panel-border); word-break: break-all; }
+    tr.run-row { cursor: pointer; }
+    tr.run-row:hover td { background: rgba(100,100,255,0.07); }
   </style>
 </head>
 <body>
@@ -54,6 +56,12 @@ const vscode = acquireVsCodeApi();
 document.querySelectorAll("[data-command]").forEach((button) => {
   button.addEventListener("click", () => {
     vscode.postMessage({ command: button.getAttribute("data-command") });
+  });
+});
+
+document.querySelectorAll("tr.run-row[data-run-id]").forEach((row) => {
+  row.addEventListener("click", () => {
+    vscode.postMessage({ command: "selectRun", runId: row.getAttribute("data-run-id") });
   });
 });
 

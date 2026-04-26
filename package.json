@@ -27,7 +27,8 @@
     "onCommand:aiWorkflow.openWorkspaces",
     "onCommand:aiWorkflow.approvePlan",
     "onCommand:aiWorkflow.rejectPlan",
-    "onCommand:aiWorkflow.selectRun"
+    "onCommand:aiWorkflow.selectRun",
+    "onCommand:aiWorkflow.selectRunById"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -106,6 +107,10 @@
       {
         "command": "aiWorkflow.selectRun",
         "title": "AI Workflow: Select Workflow"
+      },
+      {
+        "command": "aiWorkflow.selectRunById",
+        "title": "AI Workflow: Select Workflow by ID"
       }
     ],
     "viewsContainers": {

@@ -10,6 +10,8 @@ export class DashboardPanel {
     lastRun?: RunExperience;
     metrics?: Record<string, unknown>;
     memory?: RunExperience[];
+    pendingPlans?: RunExperience[];
+    finishedRuns?: RunExperience[];
     logs?: Record<string, unknown>[];
     version?: string;
     logPath?: string;
@@ -51,6 +53,10 @@ export class DashboardPanel {
       if (message.command === "rejectPlan") {
         vscode.commands.executeCommand("aiWorkflow.rejectPlan");
       }
+
+      if (message.command === "selectRun" && message.runId) {
+        vscode.commands.executeCommand("aiWorkflow.selectRunById", message.runId as string);
+      }
     });
   }
 
@@ -63,6 +69,8 @@ export class DashboardPanel {
     lastRun?: RunExperience;
     metrics?: Record<string, unknown>;
     memory?: RunExperience[];
+    pendingPlans?: RunExperience[];
+    finishedRuns?: RunExperience[];
     logs?: Record<string, unknown>[];
     version?: string;
     logPath?: string;
@@ -129,9 +137,15 @@ ${isRunning && currentPlan ? `
   </div>
 </div>
 
-<div class="card">
-  <h2>Memoria reciente</h2>
-  ${payload.memory?.length ? this.renderMemory(payload.memory) : "<p>Sin memoria cargada.</p>"}
+<div class="grid">
+  <div class="card">
+    <h2>En ejecución / Pendientes</h2>
+    ${payload.pendingPlans?.length ? this.renderPendingPlans(payload.pendingPlans) : "<p class=\"muted\">Sin planes pendientes.</p>"}
+  </div>
+  <div class="card">
+    <h2>Terminados</h2>
+    ${payload.finishedRuns?.length ? this.renderFinishedRuns(payload.finishedRuns) : "<p class=\"muted\">Sin ejecuciones terminadas.</p>"}
+  </div>
 </div>
 `;
   }
@@ -175,18 +189,34 @@ ${plan?.steps?.map((step) => `
 `;
   }
 
-  private renderMemory(memory: RunExperience[]): string {
+  private renderPendingPlans(plans: RunExperience[]): string {
     return `
 <table>
-<tr><th>Run</th><th>Tarea</th><th>Score</th><th>Fecha</th></tr>
-${memory.slice(-10).reverse().map((run) => `
-<tr>
-<td>${escapeHtml(run.runId)}</td>
-<td>${escapeHtml(run.task?.title ?? "")}</td>
-<td>${escapeHtml(run.evaluation?.score ?? "plan")}</td>
-<td>${escapeHtml(run.finishedAt ?? "")}</td>
+<tr><th>Run</th><th>Tarea</th><th>Creado</th></tr>
+${plans.map((run) => `
+<tr class="run-row" data-run-id="${escapeHtml(run.runId)}">
+<td><code>${escapeHtml(run.runId.slice(0, 8))}</code></td>
+<td>${escapeHtml(run.task?.title ?? run.plan?.summary?.slice(0, 60) ?? "")}</td>
+<td class="muted" style="font-size:0.8em">${escapeHtml((run as unknown as Record<string,unknown>).createdAt as string ?? "")}</td>
 </tr>
 `).join("")}
+</table>`;
+  }
+
+  private renderFinishedRuns(runs: RunExperience[]): string {
+    return `
+<table>
+<tr><th>Run</th><th>Tarea</th><th>Score</th><th>Terminado</th></tr>
+${runs.map((run) => {
+      const scoreClass = run.evaluation?.success ? "ok" : run.evaluation ? "bad" : "";
+      return `
+<tr class="run-row" data-run-id="${escapeHtml(run.runId)}">
+<td><code>${escapeHtml(run.runId.slice(0, 8))}</code></td>
+<td>${escapeHtml(run.task?.title ?? run.plan?.summary?.slice(0, 60) ?? "")}</td>
+<td class="${scoreClass}">${escapeHtml(run.evaluation?.score ?? "—")}</td>
+<td class="muted" style="font-size:0.8em">${escapeHtml(run.finishedAt?.slice(0, 16).replace("T", " ") ?? "")}</td>
+</tr>`;
+    }).join("")}
 </table>`;
   }
 }
