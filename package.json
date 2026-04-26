@@ -2,7 +2,7 @@
   "name": "ai-workflow-engine-vscode",
   "displayName": "AI Workflow Engine",
   "description": "VSCode control tower for AI Workflow Engine V3/V4: Plan Mode, agents, workspaces, security gates, memory and metrics.",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "publisher": "local",
   "private": true,
   "icon": "media/icon.png",
