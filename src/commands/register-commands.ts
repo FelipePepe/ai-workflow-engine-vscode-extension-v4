@@ -103,6 +103,10 @@ export function registerCommands(
     services.logger.info("createPlan: start", { title: task.title });
     try {
       const plan = await createClient().createPlan(task);
+      // Engine may not echo back the original TaskInput — preserve it so runTask can use it
+      if (!plan.task) {
+        plan.task = task;
+      }
       services.state.currentPlan = plan;
       services.planRepo.savePlan(plan);
       services.logger.info("createPlan: success", { runId: plan.runId });
@@ -135,10 +139,19 @@ export function registerCommands(
     const plan = services.state.currentPlan;
     services.logger.info("runTask: resolved task", { task: plan?.task?.title ?? "none", planRunId: plan?.runId });
 
-    if (!plan?.task) {
-      services.logger.warn("runTask: no task found, aborting");
+    if (!plan) {
+      services.logger.warn("runTask: no plan in state");
       vscode.window.showWarningMessage("No hay plan activo. Crea uno primero con 'Crear plan'.");
       return;
+    }
+
+    if (!plan.task) {
+      services.logger.warn("runTask: task missing from plan, prompting user", { runId: plan.runId });
+      const reenteredTask = await taskInput.askTask();
+      if (!reenteredTask) return;
+      plan.task = reenteredTask;
+      // Persist the recovered task so future executions don't ask again
+      services.planRepo.savePlan(plan);
     }
 
     if (plan.evaluation || plan.finishedAt) {
