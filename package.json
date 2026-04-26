@@ -28,7 +28,8 @@
     "onCommand:aiWorkflow.approvePlan",
     "onCommand:aiWorkflow.rejectPlan",
     "onCommand:aiWorkflow.selectRun",
-    "onCommand:aiWorkflow.selectRunById"
+    "onCommand:aiWorkflow.selectRunById",
+    "onCommand:aiWorkflow.openFolder"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -111,6 +112,10 @@
       {
         "command": "aiWorkflow.selectRunById",
         "title": "AI Workflow: Select Workflow by ID"
+      },
+      {
+        "command": "aiWorkflow.openFolder",
+        "title": "AI Workflow: Open Generated Folder"
       }
     ],
     "viewsContainers": {

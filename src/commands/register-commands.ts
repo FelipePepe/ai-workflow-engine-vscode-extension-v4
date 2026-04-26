@@ -197,6 +197,7 @@ export function registerCommands(
       services.state.lastRun = run;
       services.planRepo.saveRun(run);
       services.logger.info("runTask: success", { runId: run.runId, score: run.evaluation?.score });
+      workspaceService.addRunFolders(run);
       vscode.window.showInformationMessage(`Run completado: ${run.runId}`);
 
       connectRunWebSocket(run.runId);
@@ -239,6 +240,10 @@ export function registerCommands(
 
   disposables.push(vscode.commands.registerCommand("aiWorkflow.openWorkspaces", async () => {
     await workspaceService.openAiWorkspaces();
+  }));
+
+  disposables.push(vscode.commands.registerCommand("aiWorkflow.openFolder", (folderPath: string) => {
+    workspaceService.openFolder(folderPath);
   }));
 
   disposables.push(vscode.commands.registerCommand("aiWorkflow.approvePlan", async () => {

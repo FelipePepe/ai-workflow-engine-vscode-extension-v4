@@ -57,6 +57,10 @@ export class DashboardPanel {
       if (message.command === "selectRun" && message.runId) {
         vscode.commands.executeCommand("aiWorkflow.selectRunById", message.runId as string);
       }
+
+      if (message.command === "openFolder" && message.path) {
+        vscode.commands.executeCommand("aiWorkflow.openFolder", message.path as string);
+      }
     });
   }
 
@@ -178,12 +182,40 @@ ${plan?.steps?.map((step) => `
     const evaluation = run.evaluation;
     const scoreClass = evaluation?.success ? "ok" : "bad";
 
+    const workspaceEntries = Object.entries(run.workspaces ?? {});
+    const workspacesHtml = workspaceEntries.length > 0
+      ? `<h3>Código generado</h3>
+<table>
+<tr><th>Agente</th><th>Directorio</th><th></th></tr>
+${workspaceEntries.map(([agent, dir]) => `
+<tr>
+<td>${escapeHtml(agent)}</td>
+<td><code style="font-size:0.8em">${escapeHtml(dir)}</code></td>
+<td><button class="secondary" data-open-folder="${escapeHtml(dir)}">Abrir</button></td>
+</tr>`).join("")}
+</table>`
+      : "";
+
+    const agentResultsHtml = run.agentResults?.length
+      ? `<h3>Resultados por agente</h3>
+<table>
+<tr><th>Agente</th><th>Estado</th><th>Logs</th></tr>
+${run.agentResults.map((ar) => `
+<tr>
+<td>${escapeHtml(ar.agentName)}</td>
+<td><span class="${ar.status === "success" ? "ok" : "bad"}">${escapeHtml(ar.status)}</span></td>
+<td class="muted" style="font-size:0.8em">${ar.logs?.slice(-3).map((l) => escapeHtml(l)).join("<br>") ?? ""}</td>
+</tr>`).join("")}
+</table>`
+      : "";
+
     return `
 <p><b>Run:</b> ${escapeHtml(run.runId)}</p>
-<p><b>Dry run:</b> ${escapeHtml(run.dryRun)}</p>
 <p><b>Score:</b> <span class="${scoreClass}">${escapeHtml(evaluation?.score ?? "N/A")}</span></p>
 <p><b>Security:</b> ${escapeHtml(evaluation?.securityGatePassed ?? "N/A")}</p>
 <p><b>Quality:</b> ${escapeHtml(evaluation?.qualityGatePassed ?? "N/A")}</p>
+${workspacesHtml}
+${agentResultsHtml}
 <h3>Mejoras</h3>
 <ul>${run.improvements?.map((item) => `<li>${escapeHtml(item)}</li>`).join("") ?? ""}</ul>
 `;

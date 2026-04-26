@@ -65,6 +65,13 @@ document.querySelectorAll("tr.run-row[data-run-id]").forEach((row) => {
   });
 });
 
+document.querySelectorAll("button[data-open-folder]").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    vscode.postMessage({ command: "openFolder", path: btn.getAttribute("data-open-folder") });
+  });
+});
+
 window.addEventListener('message', (evt) => {
   const msg = evt.data;
   if (msg.type !== 'ws-event') return;
