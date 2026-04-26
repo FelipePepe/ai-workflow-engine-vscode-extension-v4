@@ -1,0 +1,189 @@
+{
+  "name": "ai-workflow-engine-vscode",
+  "displayName": "AI Workflow Engine",
+  "description": "VSCode control tower for AI Workflow Engine V3/V4: Plan Mode, agents, workspaces, security gates, memory and metrics.",
+  "version": "0.4.1",
+  "publisher": "local",
+  "private": true,
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Testing",
+    "Visualization"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:aiWorkflow.openDashboard",
+    "onCommand:aiWorkflow.createPlan",
+    "onCommand:aiWorkflow.runTask",
+    "onCommand:aiWorkflow.runE2eDemo",
+    "onCommand:aiWorkflow.analyzeDiscovery",
+    "onCommand:aiWorkflow.showMemory",
+    "onCommand:aiWorkflow.showMetrics",
+    "onCommand:aiWorkflow.showConfig",
+    "onCommand:aiWorkflow.openWorkspaces",
+    "onCommand:aiWorkflow.approvePlan",
+    "onCommand:aiWorkflow.rejectPlan"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "AI Workflow Engine",
+      "properties": {
+        "aiWorkflow.engineUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:3000",
+          "description": "Base URL of the AI Workflow Engine."
+        },
+        "aiWorkflow.websocketUrl": {
+          "type": "string",
+          "default": "ws://127.0.0.1:3000",
+          "description": "Base WebSocket URL of the AI Workflow Engine."
+        },
+        "aiWorkflow.defaultPriority": {
+          "type": "string",
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "description": "Default priority for new AI tasks."
+        },
+        "aiWorkflow.autoOpenDashboard": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open dashboard automatically after creating/running a task."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "aiWorkflow.openDashboard",
+        "title": "AI Workflow: Open Dashboard"
+      },
+      {
+        "command": "aiWorkflow.createPlan",
+        "title": "AI Workflow: Create Plan"
+      },
+      {
+        "command": "aiWorkflow.runTask",
+        "title": "AI Workflow: Run Task"
+      },
+      {
+        "command": "aiWorkflow.runE2eDemo",
+        "title": "AI Workflow: Run End-to-End Demo"
+      },
+      {
+        "command": "aiWorkflow.analyzeDiscovery",
+        "title": "AI Workflow: Analyze Discovery"
+      },
+      {
+        "command": "aiWorkflow.showMemory",
+        "title": "AI Workflow: Show Memory"
+      },
+      {
+        "command": "aiWorkflow.showMetrics",
+        "title": "AI Workflow: Show Metrics"
+      },
+      {
+        "command": "aiWorkflow.showConfig",
+        "title": "AI Workflow: Show Engine Config"
+      },
+      {
+        "command": "aiWorkflow.openWorkspaces",
+        "title": "AI Workflow: Open AI Workspaces"
+      },
+      {
+        "command": "aiWorkflow.approvePlan",
+        "title": "AI Workflow: Approve Current Plan"
+      },
+      {
+        "command": "aiWorkflow.rejectPlan",
+        "title": "AI Workflow: Reject Current Plan"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aiWorkflow",
+          "title": "AI Workflow",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "aiWorkflow": [
+        {
+          "id": "aiWorkflow.runs",
+          "name": "Runs"
+        },
+        {
+          "id": "aiWorkflow.actions",
+          "name": "Actions"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "aiWorkflow.openDashboard",
+          "when": "view == aiWorkflow.runs",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "aiWorkflow.openDashboard"
+        },
+        {
+          "command": "aiWorkflow.createPlan"
+        },
+        {
+          "command": "aiWorkflow.runTask"
+        },
+        {
+          "command": "aiWorkflow.runE2eDemo"
+        },
+        {
+          "command": "aiWorkflow.analyzeDiscovery"
+        },
+        {
+          "command": "aiWorkflow.showMemory"
+        },
+        {
+          "command": "aiWorkflow.showMetrics"
+        },
+        {
+          "command": "aiWorkflow.showConfig"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint \"src/**/*.ts\"",
+    "package": "vsce package",
+    "pretest": "npm run compile",
+    "test": "node ./dist/test/smoke.test.js"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.92.0",
+    "@types/ws": "^8.18.1",
+    "@vscode/vsce": "^2.25.0",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
