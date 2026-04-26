@@ -5,7 +5,10 @@ import type {
 } from "../types/engine-types.js";
 
 export class EngineClient {
-  constructor(private readonly baseUrl: string) {}
+  constructor(
+    private readonly baseUrl: string,
+    private readonly timeoutMs: number = 30_000
+  ) {}
 
   async health(): Promise<Record<string, unknown>> {
     return this.get("/");
@@ -35,8 +38,24 @@ export class EngineClient {
     return this.get("/config");
   }
 
+  private async fetchWithTimeout(input: string, init?: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        const method = init?.method ?? "GET";
+        throw new Error(`${method} ${input} timed out after ${this.timeoutMs}ms`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   private async get<T>(path: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`);
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`);
     if (!response.ok) {
       throw new Error(`GET ${path} failed: ${response.status} ${response.statusText}`);
     }
@@ -45,7 +64,7 @@ export class EngineClient {
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
