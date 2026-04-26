@@ -9,7 +9,7 @@ import { StateService } from "./services/state-service.js";
 import { ActionsProvider } from "./tree/actions-provider.js";
 import { RunsProvider } from "./tree/runs-provider.js";
 
-const VERSION = "0.5.0";
+const VERSION = "0.6.0";
 
 export function activate(context: vscode.ExtensionContext): void {
   const config = new ConfigService();

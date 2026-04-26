@@ -77,7 +77,7 @@ export function registerCommands(
       metrics,
       memory,
       logs,
-      version: "0.5.0",
+      version: "0.6.0",
       logPath: services.logger.path,
       canExecute: !isRunning && !isCompleted,
       isRunning
