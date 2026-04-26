@@ -14,6 +14,7 @@ export class DashboardPanel {
     version?: string;
     logPath?: string;
     canExecute?: boolean;
+    isRunning?: boolean;
   }): void {
     if (!this.panel) {
       this.panel = vscode.window.createWebviewPanel(
@@ -53,6 +54,10 @@ export class DashboardPanel {
     });
   }
 
+  postEvent(event: Record<string, unknown>): void {
+    this.panel?.webview.postMessage({ type: "ws-event", event });
+  }
+
   private render(payload: {
     currentPlan?: RunExperience;
     lastRun?: RunExperience;
@@ -62,6 +67,7 @@ export class DashboardPanel {
     version?: string;
     logPath?: string;
     canExecute?: boolean;
+    isRunning?: boolean;
   }): string {
     const currentPlan = payload.currentPlan;
     const lastRun = payload.lastRun;
@@ -69,6 +75,7 @@ export class DashboardPanel {
     const version = payload.version ?? "?";
     const logPath = payload.logPath ?? "";
     const canExecute = payload.canExecute ?? true;
+    const isRunning  = payload.isRunning  ?? false;
     const runBtnDisabled = canExecute ? "" : " disabled title=\"Este workflow no se puede ejecutar (ya completado o en ejecución)\"";
     const runBtnClass = canExecute ? "" : " secondary";
 
@@ -84,10 +91,20 @@ export class DashboardPanel {
   <button class="secondary" data-command="rejectPlan">Rechazar plan</button>
 </div>
 
+${isRunning && currentPlan ? `
+<div id="exec-banner" class="card exec-running">
+  <em class="spinner">&#9881;</em>
+  <div style="flex:1">
+    <strong>Ejecutando plan&hellip;</strong>
+    <span class="muted" style="margin-left:12px">Run: ${escapeHtml(currentPlan.runId)}</span>
+    <p class="muted" style="margin:2px 0 0;font-size:0.82em">Los pasos se actualizan en tiempo real vía WebSocket</p>
+  </div>
+</div>` : ""}
+
 <div class="grid">
   <div class="card">
     <h2>Plan actual</h2>
-    ${currentPlan ? this.renderPlan(currentPlan) : "<p>No hay plan activo.</p>"}
+    ${currentPlan ? this.renderPlan(currentPlan, isRunning) : "<p>No hay plan activo.</p>"}
   </div>
 
   <div class="card">
@@ -104,7 +121,11 @@ export class DashboardPanel {
 
   <div class="card">
     <h2>Eventos WebSocket</h2>
-    ${payload.logs?.length ? jsonBlock(payload.logs.slice(-20)) : "<p>Sin eventos.</p>"}
+    <div id="ws-log" class="ws-log">
+      ${payload.logs?.length
+        ? payload.logs.slice(-15).reverse().map((e) => `<div class="ws-entry">${escapeHtml(JSON.stringify(e))}</div>`).join("")
+        : "<p class=\"muted\">Sin eventos aún.</p>"}
+    </div>
   </div>
 </div>
 
@@ -115,7 +136,7 @@ export class DashboardPanel {
 `;
   }
 
-  private renderPlan(run: RunExperience): string {
+  private renderPlan(run: RunExperience, isRunning = false): string {
     const plan = run.plan;
 
     return `
@@ -124,9 +145,10 @@ export class DashboardPanel {
 <p><b>Resumen:</b> ${escapeHtml(plan?.summary ?? "")}</p>
 <h3>Pasos</h3>
 <table>
-<tr><th>ID</th><th>Agente</th><th>Tarea</th><th>Paralelo</th></tr>
+<tr><th style="width:1.6em"></th><th>ID</th><th>Agente</th><th>Tarea</th><th>Paralelo</th></tr>
 ${plan?.steps?.map((step) => `
-<tr>
+<tr data-step-id="${escapeHtml(step.id)}" data-agent="${escapeHtml(step.agent)}">
+<td><span class="step-live-status">${isRunning ? "○" : ""}</span></td>
 <td>${escapeHtml(step.id)}</td>
 <td>${escapeHtml(step.agent)}</td>
 <td>${escapeHtml(step.task)}</td>

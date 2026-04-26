@@ -41,10 +41,13 @@ export function registerCommands(
       (event) => {
         if (logs.length >= LOG_BUFFER_MAX) logs.shift();
         logs.push(event);
+        services.dashboard.postEvent(event);
       },
       (status) => {
         if (logs.length >= LOG_BUFFER_MAX) logs.shift();
-        logs.push({ type: "ws-status", status });
+        const statusEvent = { type: "ws-status", status };
+        logs.push(statusEvent);
+        services.dashboard.postEvent(statusEvent);
       }
     );
     ws.connect();
@@ -76,7 +79,8 @@ export function registerCommands(
       logs,
       version: "0.5.0",
       logPath: services.logger.path,
-      canExecute: !isRunning && !isCompleted
+      canExecute: !isRunning && !isCompleted,
+      isRunning
     });
   }
 
