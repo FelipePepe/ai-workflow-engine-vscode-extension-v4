@@ -82,7 +82,7 @@ export function registerCommands(
       pendingPlans,
       finishedRuns,
       logs,
-      version: "0.6.0",
+      version: "0.7.0",
       logPath: services.logger.path,
       canExecute: !isRunning && !isCompleted,
       isRunning

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-04-26
+
+### Added
+- Task type selector in create-plan wizard: **Nuevo proyecto**, **Evolutivo**, **Incidencia**
+- `workspacePath` and `taskType` fields in `TaskInput` type
+- Wizard auto-detects current VSCode workspace folders and passes the path to the engine
+- `WorkspaceService.addRunFolders()`: automatically adds engine-generated code dirs to VSCode workspace after run completes
+- `WorkspaceService.openFolder()`: opens a single generated folder on demand
+- Dashboard "Última ejecución" now shows **Código generado** table (agent → dir) with "Abrir" buttons
+- Dashboard shows **Resultados por agente** table with status and last 3 log lines
+- `aiWorkflow.openFolder` command for opening generated folders from webview buttons
+- Two-column memory section: **En ejecución / Pendientes** and **Terminados** — clickable rows load selected run into dashboard
+- `aiWorkflow.selectRunById` command — looks up run by string ID from DB
+- All click handlers are CSP-safe (data attributes + nonce-scripted handlers, no inline onclick)
+
+---
+
 ## [0.6.0] - 2026-04-26
 
 ### Added
