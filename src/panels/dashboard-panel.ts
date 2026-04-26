@@ -10,7 +10,13 @@ export class DashboardPanel {
     lastRun?: RunExperience;
     metrics?: Record<string, unknown>;
     memory?: RunExperience[];
+    pendingPlans?: RunExperience[];
+    finishedRuns?: RunExperience[];
     logs?: Record<string, unknown>[];
+    version?: string;
+    logPath?: string;
+    canExecute?: boolean;
+    isRunning?: boolean;
   }): void {
     if (!this.panel) {
       this.panel = vscode.window.createWebviewPanel(
@@ -40,10 +46,6 @@ export class DashboardPanel {
         vscode.commands.executeCommand("aiWorkflow.runTask");
       }
 
-      if (message.command === "runE2eDemo") {
-        vscode.commands.executeCommand("aiWorkflow.runE2eDemo");
-      }
-
       if (message.command === "approvePlan") {
         vscode.commands.executeCommand("aiWorkflow.approvePlan");
       }
@@ -51,7 +53,19 @@ export class DashboardPanel {
       if (message.command === "rejectPlan") {
         vscode.commands.executeCommand("aiWorkflow.rejectPlan");
       }
+
+      if (message.command === "selectRun" && message.runId) {
+        vscode.commands.executeCommand("aiWorkflow.selectRunById", message.runId as string);
+      }
+
+      if (message.command === "openFolder" && message.path) {
+        vscode.commands.executeCommand("aiWorkflow.openFolder", message.path as string);
+      }
     });
+  }
+
+  postEvent(event: Record<string, unknown>): void {
+    this.panel?.webview.postMessage({ type: "ws-event", event });
   }
 
   private render(payload: {
@@ -59,27 +73,50 @@ export class DashboardPanel {
     lastRun?: RunExperience;
     metrics?: Record<string, unknown>;
     memory?: RunExperience[];
+    pendingPlans?: RunExperience[];
+    finishedRuns?: RunExperience[];
     logs?: Record<string, unknown>[];
+    version?: string;
+    logPath?: string;
+    canExecute?: boolean;
+    isRunning?: boolean;
   }): string {
     const currentPlan = payload.currentPlan;
     const lastRun = payload.lastRun;
+    const builtAt = new Date().toISOString();
+    const version = payload.version ?? "?";
+    const logPath = payload.logPath ?? "";
+    const canExecute = payload.canExecute ?? true;
+    const isRunning  = payload.isRunning  ?? false;
+    const runBtnDisabled = canExecute ? "" : " disabled title=\"Este workflow no se puede ejecutar (ya completado o en ejecución)\"";
+    const runBtnClass = canExecute ? "" : " secondary";
 
     return `
 <h1>AI Workflow Engine</h1>
 <p class="muted">Control Tower para Plan Mode, agentes, seguridad, calidad y memoria.</p>
+<p class="muted" style="font-size:0.8em">v${escapeHtml(version)} · cargado ${escapeHtml(builtAt)}${logPath ? ` · log: <code>${escapeHtml(logPath)}</code>` : ""}</p>
 
 <div class="card">
   <button data-command="createPlan">Crear plan</button>
-  <button data-command="runTask">Ejecutar tarea</button>
-  <button data-command="runE2eDemo">Demo E2E</button>
+  <button data-command="runTask" class="${runBtnClass}"${runBtnDisabled}>Ejecutar tarea</button>
   <button data-command="approvePlan">Aprobar plan</button>
   <button class="secondary" data-command="rejectPlan">Rechazar plan</button>
 </div>
 
+${isRunning && currentPlan ? `
+<div id="exec-banner" class="card exec-running">
+  <em class="spinner">&#9881;</em>
+  <div style="flex:1">
+    <strong>Ejecutando plan&hellip;</strong>
+    <span class="muted" style="margin-left:12px">Run: ${escapeHtml(currentPlan.runId)}</span>
+    <p class="muted" style="margin:2px 0 0;font-size:0.82em">Los pasos se actualizan en tiempo real vía WebSocket</p>
+  </div>
+</div>` : ""}
+
 <div class="grid">
   <div class="card">
     <h2>Plan actual</h2>
-    ${currentPlan ? this.renderPlan(currentPlan) : "<p>No hay plan activo.</p>"}
+    ${currentPlan ? this.renderPlan(currentPlan, isRunning) : "<p>No hay plan activo.</p>"}
   </div>
 
   <div class="card">
@@ -96,18 +133,28 @@ export class DashboardPanel {
 
   <div class="card">
     <h2>Eventos WebSocket</h2>
-    ${payload.logs?.length ? jsonBlock(payload.logs.slice(-20)) : "<p>Sin eventos.</p>"}
+    <div id="ws-log" class="ws-log">
+      ${payload.logs?.length
+        ? payload.logs.slice(-15).reverse().map((e) => `<div class="ws-entry">${escapeHtml(JSON.stringify(e))}</div>`).join("")
+        : "<p class=\"muted\">Sin eventos aún.</p>"}
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <h2>Memoria reciente</h2>
-  ${payload.memory?.length ? this.renderMemory(payload.memory) : "<p>Sin memoria cargada.</p>"}
+<div class="grid">
+  <div class="card">
+    <h2>En ejecución / Pendientes</h2>
+    ${payload.pendingPlans?.length ? this.renderPendingPlans(payload.pendingPlans) : "<p class=\"muted\">Sin planes pendientes.</p>"}
+  </div>
+  <div class="card">
+    <h2>Terminados</h2>
+    ${payload.finishedRuns?.length ? this.renderFinishedRuns(payload.finishedRuns) : "<p class=\"muted\">Sin ejecuciones terminadas.</p>"}
+  </div>
 </div>
 `;
   }
 
-  private renderPlan(run: RunExperience): string {
+  private renderPlan(run: RunExperience, isRunning = false): string {
     const plan = run.plan;
 
     return `
@@ -116,9 +163,10 @@ export class DashboardPanel {
 <p><b>Resumen:</b> ${escapeHtml(plan?.summary ?? "")}</p>
 <h3>Pasos</h3>
 <table>
-<tr><th>ID</th><th>Agente</th><th>Tarea</th><th>Paralelo</th></tr>
+<tr><th style="width:1.6em"></th><th>ID</th><th>Agente</th><th>Tarea</th><th>Paralelo</th></tr>
 ${plan?.steps?.map((step) => `
-<tr>
+<tr data-step-id="${escapeHtml(step.id)}" data-agent="${escapeHtml(step.agent)}">
+<td><span class="step-live-status">${isRunning ? "○" : ""}</span></td>
 <td>${escapeHtml(step.id)}</td>
 <td>${escapeHtml(step.agent)}</td>
 <td>${escapeHtml(step.task)}</td>
@@ -134,29 +182,73 @@ ${plan?.steps?.map((step) => `
     const evaluation = run.evaluation;
     const scoreClass = evaluation?.success ? "ok" : "bad";
 
+    const workspaceEntries = Object.entries(run.workspaces ?? {});
+    const workspacesHtml = workspaceEntries.length > 0
+      ? `<h3>Código generado</h3>
+<table>
+<tr><th>Agente</th><th>Directorio</th><th></th></tr>
+${workspaceEntries.map(([agent, dir]) => `
+<tr>
+<td>${escapeHtml(agent)}</td>
+<td><code style="font-size:0.8em">${escapeHtml(dir)}</code></td>
+<td><button class="secondary" data-open-folder="${escapeHtml(dir)}">Abrir</button></td>
+</tr>`).join("")}
+</table>`
+      : "";
+
+    const agentResultsHtml = run.agentResults?.length
+      ? `<h3>Resultados por agente</h3>
+<table>
+<tr><th>Agente</th><th>Estado</th><th>Logs</th></tr>
+${run.agentResults.map((ar) => `
+<tr>
+<td>${escapeHtml(ar.agentName)}</td>
+<td><span class="${ar.status === "success" ? "ok" : "bad"}">${escapeHtml(ar.status)}</span></td>
+<td class="muted" style="font-size:0.8em">${ar.logs?.slice(-3).map((l) => escapeHtml(l)).join("<br>") ?? ""}</td>
+</tr>`).join("")}
+</table>`
+      : "";
+
     return `
 <p><b>Run:</b> ${escapeHtml(run.runId)}</p>
-<p><b>Dry run:</b> ${escapeHtml(run.dryRun)}</p>
 <p><b>Score:</b> <span class="${scoreClass}">${escapeHtml(evaluation?.score ?? "N/A")}</span></p>
 <p><b>Security:</b> ${escapeHtml(evaluation?.securityGatePassed ?? "N/A")}</p>
 <p><b>Quality:</b> ${escapeHtml(evaluation?.qualityGatePassed ?? "N/A")}</p>
+${workspacesHtml}
+${agentResultsHtml}
 <h3>Mejoras</h3>
 <ul>${run.improvements?.map((item) => `<li>${escapeHtml(item)}</li>`).join("") ?? ""}</ul>
 `;
   }
 
-  private renderMemory(memory: RunExperience[]): string {
+  private renderPendingPlans(plans: RunExperience[]): string {
     return `
 <table>
-<tr><th>Run</th><th>Tarea</th><th>Score</th><th>Fecha</th></tr>
-${memory.slice(-10).reverse().map((run) => `
-<tr>
-<td>${escapeHtml(run.runId)}</td>
-<td>${escapeHtml(run.task?.title ?? "")}</td>
-<td>${escapeHtml(run.evaluation?.score ?? "plan")}</td>
-<td>${escapeHtml(run.finishedAt ?? "")}</td>
+<tr><th>Run</th><th>Tarea</th><th>Creado</th></tr>
+${plans.map((run) => `
+<tr class="run-row" data-run-id="${escapeHtml(run.runId)}">
+<td><code>${escapeHtml(run.runId.slice(0, 8))}</code></td>
+<td>${escapeHtml(run.task?.title ?? run.plan?.summary?.slice(0, 60) ?? "")}</td>
+<td class="muted" style="font-size:0.8em">${escapeHtml((run as unknown as Record<string,unknown>).createdAt as string ?? "")}</td>
 </tr>
 `).join("")}
+</table>`;
+  }
+
+  private renderFinishedRuns(runs: RunExperience[]): string {
+    return `
+<table>
+<tr><th>Run</th><th>Tarea</th><th>Score</th><th>Terminado</th></tr>
+${runs.map((run) => {
+      const scoreClass = run.evaluation?.success ? "ok" : run.evaluation ? "bad" : "";
+      return `
+<tr class="run-row" data-run-id="${escapeHtml(run.runId)}">
+<td><code>${escapeHtml(run.runId.slice(0, 8))}</code></td>
+<td>${escapeHtml(run.task?.title ?? run.plan?.summary?.slice(0, 60) ?? "")}</td>
+<td class="${scoreClass}">${escapeHtml(run.evaluation?.score ?? "—")}</td>
+<td class="muted" style="font-size:0.8em">${escapeHtml(run.finishedAt?.slice(0, 16).replace("T", " ") ?? "")}</td>
+</tr>`;
+    }).join("")}
 </table>`;
   }
 }
