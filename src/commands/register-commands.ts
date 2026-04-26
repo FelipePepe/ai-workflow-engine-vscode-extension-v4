@@ -146,11 +146,14 @@ export function registerCommands(
     }
 
     if (!plan.task) {
-      services.logger.warn("runTask: task missing from plan, prompting user", { runId: plan.runId });
-      const reenteredTask = await taskInput.askTask();
-      if (!reenteredTask) return;
-      plan.task = reenteredTask;
-      // Persist the recovered task so future executions don't ask again
+      // Reconstruct a minimal TaskInput from plan data — no need to ask the user
+      services.logger.warn("runTask: task missing, reconstructing from plan data", { runId: plan.runId });
+      plan.task = {
+        title: plan.plan?.summary ?? plan.branch ?? plan.runId,
+        description: plan.plan?.summary ?? "",
+        constraints: [],
+        priority: "medium"
+      };
       services.planRepo.savePlan(plan);
     }
 
