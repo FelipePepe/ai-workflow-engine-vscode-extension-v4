@@ -20,7 +20,6 @@ export class ActionsProvider implements vscode.TreeDataProvider<ActionItem> {
     new ActionItem("Open Dashboard", "aiWorkflow.openDashboard", "dashboard"),
     new ActionItem("Create Plan", "aiWorkflow.createPlan", "list-tree"),
     new ActionItem("Run Task", "aiWorkflow.runTask", "run"),
-    new ActionItem("Run E2E Demo", "aiWorkflow.runE2eDemo", "rocket"),
     new ActionItem("Analyze Discovery", "aiWorkflow.analyzeDiscovery", "search"),
     new ActionItem("Show Memory", "aiWorkflow.showMemory", "database"),
     new ActionItem("Show Metrics", "aiWorkflow.showMetrics", "graph"),

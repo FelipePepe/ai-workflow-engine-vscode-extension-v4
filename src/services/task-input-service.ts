@@ -7,47 +7,32 @@ export class TaskInputService {
 
   async askTask(): Promise<TaskInput | undefined> {
     const title = await vscode.window.showInputBox({
+      title: "Crear Plan — Paso 1 de 2",
       prompt: "Título de la tarea",
       placeHolder: "Ej: Crear login seguro",
-      validateInput: (v) => v.trim().length > 200 ? "Title must be 200 characters or less" : undefined
+      validateInput: (v) => {
+        if (!v.trim()) return "El título no puede estar vacío";
+        if (v.trim().length > 200) return "Máximo 200 caracteres";
+        return undefined;
+      }
     });
 
-    if (!title) {
-      return undefined;
-    }
-
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      vscode.window.showWarningMessage("El título no puede estar vacío.");
-      return undefined;
-    }
+    if (title === undefined) { return undefined; }
 
     const description = await vscode.window.showInputBox({
+      title: "Crear Plan — Paso 2 de 2",
       prompt: "Descripción detallada",
-      placeHolder: "Ej: Crear endpoint login con usuario, password y validación de errores"
+      placeHolder: "Ej: Crear endpoint login con usuario, password y validación de errores",
+      validateInput: (v) => !v.trim() ? "La descripción no puede estar vacía" : undefined
     });
 
-    if (!description) {
-      return undefined;
-    }
-
-    const constraintsRaw = await vscode.window.showInputBox({
-      prompt: "Restricciones separadas por coma",
-      placeHolder: "Debe incluir tests, No exponer secretos, OWASP"
-    });
-
-    const priority = await vscode.window.showQuickPick(["low", "medium", "high", "critical"], {
-      title: "Prioridad",
-      placeHolder: this.config.defaultPriority
-    }) as Priority | undefined;
+    if (description === undefined) { return undefined; }
 
     return {
-      title: trimmedTitle,
-      description,
-      constraints: constraintsRaw
-        ? [...new Set(constraintsRaw.split(",").map((x) => x.trim()).filter((c) => c.length > 0))]
-        : [],
-      priority: priority ?? this.config.defaultPriority as Priority
+      title: title.trim(),
+      description: description.trim(),
+      constraints: [],
+      priority: this.config.defaultPriority as Priority
     };
   }
 }

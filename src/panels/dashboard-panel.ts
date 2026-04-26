@@ -11,6 +11,9 @@ export class DashboardPanel {
     metrics?: Record<string, unknown>;
     memory?: RunExperience[];
     logs?: Record<string, unknown>[];
+    version?: string;
+    logPath?: string;
+    canExecute?: boolean;
   }): void {
     if (!this.panel) {
       this.panel = vscode.window.createWebviewPanel(
@@ -40,10 +43,6 @@ export class DashboardPanel {
         vscode.commands.executeCommand("aiWorkflow.runTask");
       }
 
-      if (message.command === "runE2eDemo") {
-        vscode.commands.executeCommand("aiWorkflow.runE2eDemo");
-      }
-
       if (message.command === "approvePlan") {
         vscode.commands.executeCommand("aiWorkflow.approvePlan");
       }
@@ -60,18 +59,27 @@ export class DashboardPanel {
     metrics?: Record<string, unknown>;
     memory?: RunExperience[];
     logs?: Record<string, unknown>[];
+    version?: string;
+    logPath?: string;
+    canExecute?: boolean;
   }): string {
     const currentPlan = payload.currentPlan;
     const lastRun = payload.lastRun;
+    const builtAt = new Date().toISOString();
+    const version = payload.version ?? "?";
+    const logPath = payload.logPath ?? "";
+    const canExecute = payload.canExecute ?? true;
+    const runBtnDisabled = canExecute ? "" : " disabled title=\"Este workflow no se puede ejecutar (ya completado o en ejecución)\"";
+    const runBtnClass = canExecute ? "" : " secondary";
 
     return `
 <h1>AI Workflow Engine</h1>
 <p class="muted">Control Tower para Plan Mode, agentes, seguridad, calidad y memoria.</p>
+<p class="muted" style="font-size:0.8em">v${escapeHtml(version)} · cargado ${escapeHtml(builtAt)}${logPath ? ` · log: <code>${escapeHtml(logPath)}</code>` : ""}</p>
 
 <div class="card">
   <button data-command="createPlan">Crear plan</button>
-  <button data-command="runTask">Ejecutar tarea</button>
-  <button data-command="runE2eDemo">Demo E2E</button>
+  <button data-command="runTask" class="${runBtnClass}"${runBtnDisabled}>Ejecutar tarea</button>
   <button data-command="approvePlan">Aprobar plan</button>
   <button class="secondary" data-command="rejectPlan">Rechazar plan</button>
 </div>

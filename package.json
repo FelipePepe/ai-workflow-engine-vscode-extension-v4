@@ -20,14 +20,14 @@
     "onCommand:aiWorkflow.openDashboard",
     "onCommand:aiWorkflow.createPlan",
     "onCommand:aiWorkflow.runTask",
-    "onCommand:aiWorkflow.runE2eDemo",
     "onCommand:aiWorkflow.analyzeDiscovery",
     "onCommand:aiWorkflow.showMemory",
     "onCommand:aiWorkflow.showMetrics",
     "onCommand:aiWorkflow.showConfig",
     "onCommand:aiWorkflow.openWorkspaces",
     "onCommand:aiWorkflow.approvePlan",
-    "onCommand:aiWorkflow.rejectPlan"
+    "onCommand:aiWorkflow.rejectPlan",
+    "onCommand:aiWorkflow.selectRun"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -76,10 +76,6 @@
         "title": "AI Workflow: Run Task"
       },
       {
-        "command": "aiWorkflow.runE2eDemo",
-        "title": "AI Workflow: Run End-to-End Demo"
-      },
-      {
         "command": "aiWorkflow.analyzeDiscovery",
         "title": "AI Workflow: Analyze Discovery"
       },
@@ -106,6 +102,10 @@
       {
         "command": "aiWorkflow.rejectPlan",
         "title": "AI Workflow: Reject Current Plan"
+      },
+      {
+        "command": "aiWorkflow.selectRun",
+        "title": "AI Workflow: Select Workflow"
       }
     ],
     "viewsContainers": {
@@ -146,9 +146,6 @@
         },
         {
           "command": "aiWorkflow.runTask"
-        },
-        {
-          "command": "aiWorkflow.runE2eDemo"
         },
         {
           "command": "aiWorkflow.analyzeDiscovery"
