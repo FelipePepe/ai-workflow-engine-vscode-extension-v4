@@ -168,6 +168,8 @@ function createDemoCompletedRun(task: TaskInput): RunExperience {
   };
 }
 
+const LOG_BUFFER_MAX = 500;
+
 export function registerCommands(
   context: vscode.ExtensionContext,
   services: {
@@ -191,9 +193,11 @@ export function registerCommands(
       services.config.websocketUrl,
       runId,
       (event) => {
+        if (logs.length >= LOG_BUFFER_MAX) logs.shift();
         logs.push(event);
       },
       (status) => {
+        if (logs.length >= LOG_BUFFER_MAX) logs.shift();
         logs.push({ type: "ws-status", status });
       }
     );
