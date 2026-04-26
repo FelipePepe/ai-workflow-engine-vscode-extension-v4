@@ -171,9 +171,11 @@
     "lint": "eslint \"src/**/*.ts\"",
     "package": "vsce package",
     "pretest": "npm run compile",
-    "test": "node ./dist/test/smoke.test.js"
+    "test": "node ./dist/test/smoke.test.js",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
+    "@evilmartians/lefthook": "^1.11.13",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "@types/node": "^22.10.2",
