@@ -2,7 +2,7 @@
   "name": "ai-workflow-engine-vscode",
   "displayName": "AI Workflow Engine",
   "description": "VSCode control tower for AI Workflow Engine V3/V4: Plan Mode, agents, workspaces, security gates, memory and metrics.",
-  "version": "0.4.1",
+  "version": "0.7.0",
   "publisher": "local",
   "private": true,
   "icon": "media/icon.png",
@@ -20,14 +20,16 @@
     "onCommand:aiWorkflow.openDashboard",
     "onCommand:aiWorkflow.createPlan",
     "onCommand:aiWorkflow.runTask",
-    "onCommand:aiWorkflow.runE2eDemo",
     "onCommand:aiWorkflow.analyzeDiscovery",
     "onCommand:aiWorkflow.showMemory",
     "onCommand:aiWorkflow.showMetrics",
     "onCommand:aiWorkflow.showConfig",
     "onCommand:aiWorkflow.openWorkspaces",
     "onCommand:aiWorkflow.approvePlan",
-    "onCommand:aiWorkflow.rejectPlan"
+    "onCommand:aiWorkflow.rejectPlan",
+    "onCommand:aiWorkflow.selectRun",
+    "onCommand:aiWorkflow.selectRunById",
+    "onCommand:aiWorkflow.openFolder"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -76,10 +78,6 @@
         "title": "AI Workflow: Run Task"
       },
       {
-        "command": "aiWorkflow.runE2eDemo",
-        "title": "AI Workflow: Run End-to-End Demo"
-      },
-      {
         "command": "aiWorkflow.analyzeDiscovery",
         "title": "AI Workflow: Analyze Discovery"
       },
@@ -106,6 +104,18 @@
       {
         "command": "aiWorkflow.rejectPlan",
         "title": "AI Workflow: Reject Current Plan"
+      },
+      {
+        "command": "aiWorkflow.selectRun",
+        "title": "AI Workflow: Select Workflow"
+      },
+      {
+        "command": "aiWorkflow.selectRunById",
+        "title": "AI Workflow: Select Workflow by ID"
+      },
+      {
+        "command": "aiWorkflow.openFolder",
+        "title": "AI Workflow: Open Generated Folder"
       }
     ],
     "viewsContainers": {
@@ -148,9 +158,6 @@
           "command": "aiWorkflow.runTask"
         },
         {
-          "command": "aiWorkflow.runE2eDemo"
-        },
-        {
           "command": "aiWorkflow.analyzeDiscovery"
         },
         {
@@ -171,9 +178,11 @@
     "lint": "eslint \"src/**/*.ts\"",
     "package": "vsce package",
     "pretest": "npm run compile",
-    "test": "node ./dist/test/smoke.test.js"
+    "test": "node ./dist/test/smoke.test.js",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
+    "@evilmartians/lefthook": "^1.11.13",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "@types/node": "^22.10.2",

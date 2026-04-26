@@ -1,0 +1,10 @@
+title = "Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for test fixtures and known safe values"
+paths = [
+  '''src/test/.*\.test\.ts''',
+]

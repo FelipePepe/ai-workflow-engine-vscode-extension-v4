@@ -4,9 +4,15 @@ import type { RunExperience } from "../types/engine-types.js";
 export class RunItem extends vscode.TreeItem {
   constructor(public readonly run: RunExperience) {
     super(`${run.runId} - ${run.task?.title ?? "Task"}`, vscode.TreeItemCollapsibleState.None);
+    const isCompleted = !!run.evaluation || !!run.finishedAt;
     this.description = run.evaluation ? `score ${run.evaluation.score}` : "plan";
     this.tooltip = JSON.stringify(run, null, 2);
-    this.iconPath = new vscode.ThemeIcon(run.evaluation?.success ? "pass" : "history");
+    this.iconPath = new vscode.ThemeIcon(isCompleted ? "pass" : "history");
+    this.command = {
+      command: "aiWorkflow.selectRun",
+      title: "Seleccionar workflow",
+      arguments: [run]
+    };
   }
 }
 

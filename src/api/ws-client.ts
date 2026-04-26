@@ -2,8 +2,14 @@ import WebSocket from "ws";
 
 export type WsEventHandler = (event: Record<string, unknown>) => void;
 
+const MAX_RECONNECT_ATTEMPTS = 3;
+const RECONNECT_BASE_DELAY_MS = 1000;
+
 export class EngineWebSocketClient {
   private socket?: WebSocket;
+  private reconnectAttempts = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private disposed = false;
 
   constructor(
     private readonly websocketBaseUrl: string,
@@ -17,6 +23,7 @@ export class EngineWebSocketClient {
     this.socket = new WebSocket(url);
 
     this.socket.on("open", () => {
+      this.reconnectAttempts = 0;
       this.onStatus(`Connected to ${url}`);
       this.socket?.send("hello");
     });
@@ -33,8 +40,17 @@ export class EngineWebSocketClient {
       }
     });
 
-    this.socket.on("close", () => {
-      this.onStatus("WebSocket closed");
+    this.socket.on("close", (code: number) => {
+      if (this.disposed || code === 1000) {
+        return;
+      }
+      if (this.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        this.reconnectAttempts++;
+        const delay = RECONNECT_BASE_DELAY_MS * 2 ** (this.reconnectAttempts - 1);
+        this.reconnectTimer = setTimeout(() => this.connect(), delay);
+      } else {
+        this.onStatus("disconnected");
+      }
     });
 
     this.socket.on("error", (error) => {
@@ -43,6 +59,10 @@ export class EngineWebSocketClient {
   }
 
   dispose(): void {
+    this.disposed = true;
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+    }
     this.socket?.close();
     this.socket = undefined;
   }

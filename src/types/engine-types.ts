@@ -1,10 +1,13 @@
 export type Priority = "low" | "medium" | "high" | "critical";
+export type TaskType = "new_project" | "evolutive" | "incident";
 
 export interface TaskInput {
   title: string;
   description: string;
   constraints: string[];
   priority: Priority;
+  taskType?: TaskType;
+  workspacePath?: string;
   projectSpec?: ProjectSpec;
   answers?: Record<string, string>;
 }
